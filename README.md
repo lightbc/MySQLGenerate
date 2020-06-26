@@ -7,4 +7,4 @@ MySQL代码生成工具。
 # 项目克隆地址
 HTTPS:[https://github.com/lightbc/MySQLGenerate.git](https://github.com/lightbc/MySQLGenerate.git)
 # 博客地址
-博客:[https://www.cnblogs.com/lightbc/](https://www.cnblogs.com/lightbc/)
+[博客](https://www.cnblogs.com/lightbc/)
