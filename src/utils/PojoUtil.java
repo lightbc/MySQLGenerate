@@ -158,7 +158,9 @@ public class PojoUtil {
             for (int i=0;i<columnMap.size();i++){
                 String column = columnMap.get(i).toString();
                 String javaType = javaTypeMap.get(column).toString();
-                builder.append(Constants.TAB+pojoFieldModifier+Constants.WHITE_SPACE+javaType.substring(javaType.lastIndexOf(".")+1)+Constants.WHITE_SPACE+NamesProcess.getInstance().getNewName(column)+Constants.SEMICOLON+Constants.CRLF+Constants.CRLF);
+                String propName = NamesProcess.getInstance().getNewName(column);//属性名
+                String name = propName.substring(0,1).toLowerCase()+propName.substring(1);//将属性名首字母转为小写
+                builder.append(Constants.TAB+pojoFieldModifier+Constants.WHITE_SPACE+javaType.substring(javaType.lastIndexOf(".")+1)+Constants.WHITE_SPACE+name+Constants.SEMICOLON+Constants.CRLF+Constants.CRLF);
             }
             builder.append(Constants.CODE_SEPARATOR_RIGHT+Constants.CRLF);
         }

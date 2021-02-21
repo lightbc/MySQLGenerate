@@ -5,6 +5,7 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.Console;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -20,13 +21,17 @@ import java.util.Map;
  */
 public class MySQLGenerate {
     private JPanel mainPanel;//主面板
-    private JLabel dbUrl;//数据库地址
-    private JLabel dbUserName;//数据库账号
-    private JLabel dbPwd;//数据库密码
-    private JLabel dbTable;//数据库表名
-    private JTextField url;//地址
-    private JTextField userName;//账号
-    private JTextField pwd;//密码
+    private JLabel ip;
+    private JLabel port;
+    private JLabel database;
+    private JLabel dbUserName;
+    private JLabel dbPwd;
+    private JLabel dbTable;
+    private Input ipValue;//IP地址
+    private Input portValue;//端口
+    private Input databaseValue;//数据库
+    private Input userName;//账号
+    private Input pwd;//密码
     private JPanel argPanel;//参数面板
     private JPanel doPanel;//控制面板
     private JButton conn;//测试链接
@@ -35,9 +40,13 @@ public class MySQLGenerate {
     private JButton saveConfig;//保存配置信息
     private JComboBox tableName;//表名列表
     private JLabel searchTableName;//快速查询表名
-    private JTextField textField;//搜索框
+    private Input textField;//搜索框
     private String msg;// 消息
-    private String ul;//数据库地址
+//    private String ul;//数据库地址
+    private String url;//数据库完整路径
+    private String sIP;//IP
+    private String sPort;//端口
+    private String sDb;//数据库
     private String ur;//数据库账号
     private String pd;//数据库密码
     private boolean optsFlag;//重新操作判断
@@ -60,14 +69,27 @@ public class MySQLGenerate {
      * 空值判断
      * @return
      */
-    public boolean isEmpty(){
+    public boolean isNotEmpty(){
         boolean flag = false;
-        ul = url.getText();
+//        url = ipValue.getText();
+        sIP = ipValue.getText();
+        sPort = portValue.getText();
+        sDb = databaseValue.getText();
         ur = userName.getText();
         pd = pwd.getText();
-        if (Constants.EMPTY_STR.equals(ul) || Constants.EMPTY_STR.equals(ur) || Constants.EMPTY_STR.equals(pd)){
-            msg = Constants.DB_VALUE_EMPTY;
+
+        if (Constants.EMPTY_STR.equals(sIP)){//IP为空
+            msg = Constants.DB_IP_EMPTY;
+        }else if (Constants.EMPTY_STR.equals(sPort)){//端口为空
+            msg = Constants.DB_PORT_EMPTY;
+        }else if (Constants.EMPTY_STR.equals(sDb)){//数据库为空
+            msg = Constants.DB_NAME_EMPTY;
+        }else if(Constants.EMPTY_STR.equals(ur)){//数据库用户名为空
+            msg = Constants.DB_USERNAME_EMPTY;
+        }else if(Constants.EMPTY_STR.equals(pd)){//数据库密码为空
+            msg = Constants.DB_PASSWORD_EMPTY;
         }else {
+            url = Constants.DB_URL_PREFIX+sIP+Constants.COLON+sPort+Constants.PATH_SEPARATOR+sDb;
             flag = true;
         }
         return flag;
@@ -81,8 +103,8 @@ public class MySQLGenerate {
         boolean flag = false;
         boolean is = false;
         msg = Constants.DB_CONNECT_FAIL;
-        if (isEmpty()){
-            flag = Connect.getInstance().testConnection(ul,ur,pd);
+        if (isNotEmpty()){
+            flag = Connect.getInstance().testConnection(url,ur,pd);
         }
         if (flag){
             msg = Constants.DB_CONNECT_SUCCESS;
@@ -95,6 +117,15 @@ public class MySQLGenerate {
      * 事件监听
      */
     public void addEventListeners(){
+
+        //输入框提示
+        ipValue.setPlaceHolder(Constants.TIP_URL);
+        userName.setPlaceHolder(Constants.TIP_USER_NAME);
+        pwd.setPlaceHolder(Constants.TIP_PWD);
+        textField.setPlaceHolder(Constants.TIP_SEARCH);
+        portValue.setPlaceHolder(Constants.TIP_PORT);
+        databaseValue.setPlaceHolder(Constants.TIP_DB);
+
         //连接测试
         conn.addMouseListener(new MouseAdapter() {
             @Override
@@ -117,7 +148,7 @@ public class MySQLGenerate {
                     if (optsFlag){
                         try {
                             FieldProcess fp = new FieldProcess();
-                            List tbNames = fp.getTableNames(fp.getDbName(ul));
+                            List tbNames = fp.getTableNames(fp.getDbName(url));
                             tableName.removeAllItems();
                             tableName.setMaximumRowCount(4);
                             tableName.addItem(Constants.GET_ALL_TABLE_NAMES);
@@ -150,7 +181,7 @@ public class MySQLGenerate {
                 if (optsFlag){
                     String oTableName = tableName.getSelectedItem().toString();
                     try {
-                        String pojoMsg = PojoUtil.getInstance().createPojoFile(oTableName,new FieldProcess().getDbName(ul),optsFlag);
+                        String pojoMsg = PojoUtil.getInstance().createPojoFile(oTableName,new FieldProcess().getDbName(url),optsFlag);
                         JOptionPane.showMessageDialog(mainPanel,pojoMsg,Constants.MESSAGE_DIALOG_TITLE,JOptionPane.INFORMATION_MESSAGE);
                     }catch (Exception ex){
                         JOptionPane.showMessageDialog(mainPanel,Constants.CREATE_OBJ_EXCEPTION,Constants.MESSAGE_DIALOG_TITLE,JOptionPane.WARNING_MESSAGE);
@@ -169,10 +200,14 @@ public class MySQLGenerate {
             if (optsFlag){
                 Map map = new HashMap();
                 List list = new ArrayList();
-                map.put(Constants.DB_URL,ul);
+                map.put(Constants.DB_URL_IP,sIP);
+                map.put(Constants.DB_URL_PORT,sPort);
+                map.put(Constants.DB_URL_DBNAME,sDb);
                 map.put(Constants.DB_USER,ur);
                 map.put(Constants.DB_PWD,pd);
-                list.add(Constants.DB_URL);
+                list.add(Constants.DB_URL_IP);
+                list.add(Constants.DB_URL_PORT);
+                list.add(Constants.DB_URL_DBNAME);
                 list.add(Constants.DB_USER);
                 list.add(Constants.DB_PWD);
                 boolean isSave = ConfigProcess.getInstance().savePropFile(map,list);
@@ -193,10 +228,14 @@ public class MySQLGenerate {
      */
     public void addConfigInfo(){
         Map map = ConfigProcess.getInstance().readPropFile();
-        if (map != null && map.containsKey(Constants.DB_URL) && map.containsKey(Constants.DB_USER) && map.containsKey(Constants.DB_PWD)){
-            url.setText(map.get(Constants.DB_URL).toString());
-            userName.setText(map.get(Constants.DB_USER).toString());
-            pwd.setText(map.get(Constants.DB_PWD).toString());
+        if (map != null && map.containsKey(Constants.DB_URL_IP) && map.containsKey(Constants.DB_URL_PORT)
+                && map.containsKey(Constants.DB_URL_DBNAME) && map.containsKey(Constants.DB_USER) && map.containsKey(Constants.DB_PWD)){
+            ipValue.setText(map.get(Constants.DB_URL_IP).toString());//加载保存IP
+            portValue.setText(map.get(Constants.DB_URL_PORT).toString());//加载保存端口
+            databaseValue.setText(map.get(Constants.DB_URL_DBNAME).toString());//加载保存数据库名
+            userName.setText(map.get(Constants.DB_USER).toString());//加载用户名
+            pwd.setText(map.get(Constants.DB_PWD).toString());//加载密码
         }
     }
+
 }
