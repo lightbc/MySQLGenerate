@@ -53,8 +53,19 @@ public class PojoUtil {
      * 获取实体类的目录路径
      * @return
      */
+    @Deprecated
     public String getPojoDirPath(){
         return SystemUtil.getInstance().getDirs() + Constants.PATH_SEPARATOR + entity;
+    }
+
+    /**
+     * 获取程序所在位置盘符信息
+     * @return
+     */
+    public String getPojoDir(){
+        String path = SystemUtil.getInstance().getDirs();
+        String drive = path.substring(0,path.indexOf(":")+1);
+        return drive+Constants.PATH_SEPARATOR+entity;
     }
 
     /**
@@ -73,7 +84,7 @@ public class PojoUtil {
      * @return
      */
     public boolean isCreatePojoFile(String fileName){
-        String dirPath = getPojoDirPath();
+        String dirPath = getPojoDir();
         if (!isExistsDirPath(dirPath)){
             new File(dirPath).mkdirs();
         }
@@ -105,7 +116,7 @@ public class PojoUtil {
             FileOutputStream fos = null;
             BufferedOutputStream bos = null;
             try {
-                fos = new FileOutputStream(new File(getPojoFilePath(getPojoDirPath(),fileName)));
+                fos = new FileOutputStream(new File(getPojoFilePath(getPojoDir(),fileName)));
                 bos = new BufferedOutputStream(fos);
                 bos.write(content.getBytes());
                 bos.flush();
